@@ -66,8 +66,7 @@
             <p>
                 So instead of the ArrayList let's consider the circular array buffer for the particle system.
 
-            particle 1 is inserted first, it's at the tail counter.
-            particles 2 and 3 are then inserted. The head counter is over
+ 
             </p>
             <p>
                 H = Head
@@ -76,6 +75,9 @@
                 T = Tail
             </p>
         <p>
+            particle 1 is inserted first. H = 1, T = 1
+            <br/>
+            particles 2 and 3 are then inserted. H = 3, T = 1
             <div class="box-container">
                 <div class="arrow-label head">H</div>
                 <div class="box">1</div>
@@ -108,9 +110,8 @@
          <p>
         
              It will still need to be iterated over until particle 1 is also removed.
-             The best you can do is skip over the removed particle but you still need to iterate over it and do a lookup to check wether or not to skip.
-             This is still quite performant and should not take many cpu cycles.
-            at which point the tail counter can advance to particle 3.
+             The best you can do is skip over the removed particle but you still need to iterate over all elements and check wether or not to skip each one.
+             This is quite performant and should not take many cpu cycles, however if you end up doing needlessly thousands of time per frame - it can be an issue.
        
             <div class="box-container">
                 <div class="box second">1</div>
