@@ -66,7 +66,7 @@
             <p>
                 So instead of the ArrayList let's consider the circular array buffer for the particle system.
 
-            partical 1 is inserted first, it's at the tail counter.
+            particle 1 is inserted first, it's at the tail counter.
             particles 2 and 3 are then inserted. The head counter is over
             </p>
             <p>
@@ -89,7 +89,7 @@
         <br/>
         </p>
         <p>
-            Lets say partical 2 is removed first.
+            Lets say particle 2 is removed first.
 
             <div class="box-container">
                 <div class="arrow-label head">H</div>
@@ -107,10 +107,10 @@
             
          <p>
         
-             It will still need to be iterated over until partical 1 is also removed.
-             The best you can do is skip over the removed partical but you still need to iterate over it and do a lookup to check wether or not to skip.
+             It will still need to be iterated over until particle 1 is also removed.
+             The best you can do is skip over the removed particle but you still need to iterate over it and do a lookup to check wether or not to skip.
              This is still quite performant and should not take many cpu cycles.
-            at which point the tail counter can advance to partical 3.
+            at which point the tail counter can advance to particle 3.
        
             <div class="box-container">
                 <div class="box second">1</div>
@@ -124,15 +124,15 @@
         <br/>
         </p>
         <p>
-            If partical 1 is never removed, we are always going to have to iterate from index 0 to the tail, atleast until the circular buffer tail index wraps to the beginning.
+            If particle 1 is never removed, we are always going to have to iterate from index 0 to the tail, atleast until the circular buffer tail index wraps to the beginning.
         </p>
             This next part depends purely on your requirements but my solution to this problem is to add a global TTL to all particles. 
 
-            It means that partical1 will always eventually be removed, it will clean up on it's own. The TTL value can be tweaked to meet your performance requirements.
+            It means that particle1 will always eventually be removed, it will clean up on it's own. The TTL value can be tweaked to meet your performance requirements.
         </p>
 
             
-            Performance wise this is great, it allows us to have a predictable performance and gives us a config to tweak to adjust how much performance we want to give to the partical system.
+            Performance wise this is great, it allows us to have a predictable performance and gives us a config to tweak to adjust how much performance we want to give to the particle system.
 
             <p>Let:</p>
     <math xmlns="http://www.w3.org/1998/Math/MathML">
@@ -161,9 +161,9 @@
             Most of the visual effects and particles I want in my game are ephemeral by nature, sparks, explosions smoke etc. They all naturally dissapate anyway. It makes them a great candidate for this type of data structure.
         </p>
         <p>
-            Each partical is represented by a float array, therfore the circular buffer can be represented as a 2d float array. This means that partical allocations and updates are only ever changing float values, no object allocation is required - this is zero GC.
+            Each particle is represented by a float array, therfore the circular buffer can be represented as a 2d float array. This means that particle allocations and updates are only ever changing float values, no object allocation is required - this is zero GC.
         </p>
-        <p>            Each partical can have it's own TTL seperate from the global, represented as a float. When this TTL is reached, we can mark the partical as skippibale. I find this approach to work for me, but there are other strategies which may be more suitable depending on your needs.
+        <p>            Each particle can have it's own TTL seperate from the global, represented as a float. When this TTL is reached, we can mark the particle as skippibale. I find this approach to work for me, but there are other strategies which may be more suitable depending on your needs.
         </p>
         <p>            When wrapping does occur you can advance the head by one and then you get a FIFO policy queue to handle when max amount of particles have been reached.
         </p>
