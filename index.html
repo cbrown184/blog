@@ -1,250 +1,31 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
+       <head>
+              <title>My GDX Game</title>
+              <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+              <meta id="gameViewport" name="viewport" content="width=device-width initial-scale=1">
+              <link href="styles.css" rel="stylesheet" type="text/css">
+       </head>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Christopher Brown</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="script.js"></script>
-</head>
+       <body>
+              <a class="superdev" href="javascript:%7B%20window.__gwt_bookmarklet_params%20%3D%20%7B'server_url'%3A'http%3A%2F%2Flocalhost%3A9876%2F'%7D%3B%20var%20s%20%3D%20document.createElement('script')%3B%20s.src%20%3D%20'http%3A%2F%2Flocalhost%3A9876%2Fdev_mode_on.js'%3B%20void(document.getElementsByTagName('head')%5B0%5D.appendChild(s))%3B%7D">&#8635;</a>
+              <div align="center" id="embed-html"></div>
+              <script type="text/javascript" src="html/html.nocache.js"></script>
+       </body>
 
-<body>
-    <header>
-        <h1>Christopher Brown</h1>
-        <nav>
-            <ul>
-                <li><a href="index.html">Home</a></li>
-                <li><a href="https://github.com/cbrown184">Github</a></li>
-            </ul>
-        </nav>
-    </header>
+       <script>
+              function handleMouseDown(evt) {
+                evt.preventDefault();
+                evt.stopPropagation();
+                window.focus();
+              }
 
-    <main>
-        <article>
-            <h2>Why I use circular array buffers for particles</h2>
-      
-            <p>Posted on: <time datetime="2023-10-16">October 16, 2023</time></p>
-            <section class="tags">
-                <a href="tag_java.html" class="tag">Game Dev</a>
-                <a href="tag_java.html" class="tag">Java</a>
-            </section>
-            <p>
-                Imagine an array list of 3 enemies.
-
-                <div class="box-container">
-                    <div class="box">1</div>
-                    <div class="box">2</div>
-                    <div class="box">3</div>
-                </div>
-            <br/>
-            </p>
-            <p>
-                In the game loop, the array list is iterated over and for each enemy it is updated and rendered.
-                The result is 3 enemies on the screen that are chasing the player.
-
-                <p>
-                We do not know which order the enemies might be removed from the list or 
-                for how long they may remain in the list without being removed.
-                Perhaps the player kills enemy 2 immediately, and then waits for 20 minutes before killing enemy1.
-            </p>
-            <p>
-                This scenario works fine, we simply remove enemy 2 from the list and let the GC take care of it. Job done. 
-            <br/>
-
-                <div class="box-container">
-                    <div class="box">1</div>
-                    <div class="box">3</div>
-                </div>
-            <br/>
-            </p>
-            <p>
-                We can probably use something better than an ArrayList so we don't have to resize on deletion, but let's not worry about that for now because
-                enemies are typically few and their creation and deletion are infrequent, while particles can be numerous and frequently created and deleted.
-                If we use an ArrayList for particles the GC is going to struggle, the ArrayList is going to be resizing continuously. It's going to be a mess.
-            </p>
-            <p>
-                So instead of the ArrayList let's consider the circular array buffer for the particle system.
-
- 
-            </p>
-            <p>
-                H = Head
-            </p>
-            <p>
-                T = Tail
-            </p>
-        <p>
-            particle 1 is inserted first. H = 1, T = 1
-            <br/>
-            particles 2 and 3 are then inserted. H = 1, T = 3
-            <div class="box-container">
-                <div class="arrow-label head">H</div>
-                <div class="box">1</div>
-                <div class="box">2</div>
-                <div class="arrow-label tail">T</div>
-                <div class="box">3</div>
-                <div class="box"></div>
-                <div class="box"></div>
-                <div class="box"></div>
-            </div>
-        <br/>
-        </p>
-        <p>
-            Lets say particle 2 is removed first.
-
-            <div class="box-container">
-                <div class="arrow-label head">H</div>
-                <div class="box">1</div>
-                <div class="box second">2</div>
-                <div class="arrow-label tail">T</div>
-                <div class="box">3</div>
-                <div class="box"></div>
-                <div class="box"></div>
-                <div class="box"></div>
-            </div>
-        <br/>
-        </p>
-
-            
-         <p>
-        
-             It will still need to be iterated over until particle 1 is also removed.
-             The best you can do is skip over the removed particle but you still need to iterate over all elements and check wether or not to skip each one.
-             This is quite performant and should not take many cpu cycles, however if you end up doing needlessly thousands of time per frame - it can be an issue.
-       
-            <div class="box-container">
-                <div class="box second">1</div>
-                <div class="box second">2</div>
-                <div class="arrow-label tail">HT</div>
-                <div class="box">3</div>
-                <div class="box"></div>
-                <div class="box"></div>
-                <div class="box"></div>
-            </div>
-        <br/>
-        </p>
-        <p>
-            If particle 1 is never removed, we are always going to have to iterate from index 0 to the tail, atleast until the circular buffer tail index wraps to the beginning.
-        </p>
-            This next part depends purely on your requirements but my solution to this problem is to add a global TTL to all particles. 
-
-            It means that particle1 will always eventually be removed, it will clean up on it's own. The TTL value can be tweaked to meet your performance requirements.
-        </p>
-
-            
-            Performance wise this is great, it allows us to have a predictable performance and gives us a config to tweak to adjust how much performance we want to give to the particle system.
-
-            <p>Let:</p>
-    <math xmlns="http://www.w3.org/1998/Math/MathML">
-        <mi>T</mi> <mo>=</mo> <mtext>TTL value (frames)</mtext>
-    </math>
-    <br/>
-    <math xmlns="http://www.w3.org/1998/Math/MathML">
-        <mi>S</mi> <mo>=</mo> <mtext>Size of the buffer</mtext>
-    </math>
-    <br/>
-    <math xmlns="http://www.w3.org/1998/Math/MathML">
-        <mi>P</mi> <mo>=</mo> <mtext>Particles spawned per frame</mtext>
-    </math>
-    <br/>
-    <p>
-        Then, the maximum number of iterations required (i.e., the time until the oldest particle is guaranteed to have been removed) is:</p>
-    <br/>
-</p>
-<p>
-    <math xmlns="http://www.w3.org/1998/Math/MathML">
-        <mi>I</mi> <mo>=</mo> <mi>T</mi> <mo>+</mo> <mo>(</mo> <mi>S</mi> <mo>−</mo> <mi>T</mi> <mo>×</mo> <mi>P</mi> <mo>)</mo>
-    </math>
-</p>
-<p>
-
-            Most of the visual effects and particles I want in my game are ephemeral by nature, sparks, explosions smoke etc. They all naturally dissapate anyway. It makes them a great candidate for this type of data structure.
-        </p>
-        <p>
-            Each particle is represented by a float array, therfore the circular buffer can be represented as a 2d float array. This means that particle allocations and updates are only ever changing float values, no object allocation is required - this is zero GC.
-        </p>
-        <p>            Each particle can have it's own TTL seperate from the global, represented as a float. When this TTL is reached, we can mark the particle as skippibale. I find this approach to work for me, but there are other strategies which may be more suitable depending on your needs.
-        </p>
-        <p>            When wrapping does occur you can advance the head by one and then you get a FIFO policy queue to handle when max amount of particles have been reached.
-        </p>
-        <p>            Managing particles in video games, especially those with high frequency of creation and deletion, requires efficient memory and performance considerations. A circular buffer offers a robust solution, ensuring predictable performance, efficient memory usage, and minimal overheads. It's particularly adept at handling scenarios where large quantities of ephemeral visual effects, like sparks or smoke, constantly appear and dissipate. 
-            </p>
-        </article>
-        <article>
-            <h2>From Prototype to Production Code: A Guide</h2>
-      
-            <p>Posted on: <time datetime="2023-10-13">October 13, 2023</time></p>
-            <section class="tags">
-                <a href="tag_java.html" class="tag">Prototype to Production</a>
-            </section>
-            <p>
-                <h3>What is a Prototype?</h3>
-                
-                A prototype in software development is a preliminary version of a system or application. It's often developed to visualize and validate the functionality of the final product but isn't typically built for scalability or long-term maintainability. Think of it as a quick and dirty version, akin to a college project, hackathon result, or an MVP (Minimum Viable Product) in a startup context.
-                
-                <h3>The Problem with Prototypes</h3> 
-                
-                Using our case of a video game with 10,000 lines of code (LOC), 185 classes, written in Java and following a single-threaded model with an ECS pattern for entity management, we encounter issues. While there might be some design merits, there are areas where the code is tightly coupled. Some parts might even feel hacky, and there's limited testing. This could lead to unforeseen bugs, difficulties in scalability, and increased maintenance efforts.
-                
-                <h3>Why is this problematic?</h3>
-                
-                Tightly coupled code makes modifications challenging, as a change in one part can inadvertently affect another.
-                
-                <h3>Improving the Prototype: Steps to Consider</h3>
-                
-                <ol>
-                    <li>
-                        Backup Your Code.
-                        It's fundamental. Push your code to a private repo on GitHub.
-                        Protect main branches to prevent accidental overwrites.
-                    </li>
-                    <li>
-                        Run Existing Tests.
-                        Ensure any available tests pass. If not, prioritize fixing them.
-                    </li>
-                    <li>
-                        Identify Critical Components. Recognize which classes are essential and which ones have exhibited bugs or other issues.
-                    </li>
-                    <li>
-                        Dependency Visualization.
-                        Utilize tools such as JDepend to gain insights into class dependencies. This can help in identifying and rectifying tightly coupled code sections.
-                    </li>
-                    <li>
-                        Decoupling. With dependencies identified, begin the refactoring process to decouple the code. Rely on principles like Dependency Inversion or interfaces. Given the limited testing on your prototype, you can change the code before writing tests.
-                    </li>
-                    <li>
-                        Write Unit Tests. Prioritize unit testing for critical components.
-                        Use mock libraries, like Mockito, to isolate class behaviors.
-                        Ensure a mix of unit, integration, and system tests.
-                    </li>
-                    <li>
-                        Incremental Refactoring. With decent test coverage, refactor to improve code readability and cohesion. Always run tests post significant changes.
-                    </li>
-                    <li>
-                        Code Quality Tools. Use tools such as Checkstyle, PMD, or SonarQube to maintain coding standards.
-                    </li>
-                    <li>
-                        Documentation. As refactoring progresses, enhance comments and documentation. Documenting isn't just about writing for the sake of it but providing clarity for future developers or even your future self.
-                    </li>
-                    <li>
-                        CI. Implement a CI system that builds and tests your project with every code change, ensuring consistent feedback and code stability.
-                    </li>
-                    <li>
-                        Iterate. Improvement is iterative. Don't rush. Refine one module, then transition to the next.
-                    </li>
-
-                </ol>
-                
-                By meticulously following this approach and integrating best practices, transitioning from a prototype to production-ready code can be systematic and efficient. Remember, software development is a journey. Stay updated with emerging best practices, and continuously strive to improve.
-            </p>
-        </article>
-    </main>
-
-    <footer>
-        <p>&copy; 2023 Christopher Brown. All rights reserved.</p>
-    </footer>
-</body>
-
+              function handleMouseUp(evt) {
+                evt.preventDefault();
+                evt.stopPropagation();
+              }
+              document.addEventListener('contextmenu', event => event.preventDefault());
+              document.getElementById('embed-html').addEventListener('mousedown', handleMouseDown, false);
+              document.getElementById('embed-html').addEventListener('mouseup', handleMouseUp, false);
+       </script>
 </html>
-
